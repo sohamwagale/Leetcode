@@ -21,12 +21,13 @@ export const registerSchema = z
 
     confirmPassword: z.string(),
   })
-  .refine(
+  .refine( //Thte whole object is passed into data
     (data) => data.password === data.confirmPassword,
-    {
+    { //Error path
       path:["confirmPassword"],
       message: "Passwords do not match",
     }
   );
-
+ 
+// z.infer extracts the TypeScript type from the schema.
 export type RegisterFormData = z.infer<typeof registerSchema>;

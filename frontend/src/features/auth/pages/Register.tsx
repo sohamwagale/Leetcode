@@ -1,15 +1,19 @@
 import { useForm } from "react-hook-form";
+import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { registerSchema } from "../schemas/registerSchema"; 
 import type { RegisterFormData } from "../schemas/registerSchema";
 
-import Button from "../components/Button";
-import Input from "../components/Input";
+import Button from "../../../shared/components/Button";
+import Input from "../../../shared/components/Input";
+import { useRegister } from "../hooks/useRegister";
+
+import {toast} from "sonner";
 
 export default function Register(){
 
-  const {
+  const {//TBD
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
@@ -17,8 +21,42 @@ export default function Register(){
     resolver: zodResolver(registerSchema),
   })
 
+  const registerMutation = useRegister();
+
   const onSubmit = async (data: RegisterFormData) => {
-    console.log(data);
+
+    registerMutation.mutate(data,{
+      onSuccess:()=>{
+        toast.success("Registration succesfull");
+      },
+      onError:(error:unknown)=>{
+        if (axios.isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.detail ?? "Something went wrong"
+          );
+        } else {
+          toast.error("Something went wrong");
+        }
+      }
+    })
+
+
+
+    // console.log(data);
+    // try {
+    //   const response = await registerUser(data);
+    //   console.log(response);
+    //   toast.success("Registration succesfull");
+    // } catch (error: unknown) {
+    //   // console.error(error);
+    //   if (axios.isAxiosError(error)) {
+    //     toast.error(
+    //       error.response?.data?.detail ?? "Something went wrong"
+    //     );
+    //   } else {
+    //     toast.error("Something went wrong");
+    //   }
+    // }
   }
 
   return (
