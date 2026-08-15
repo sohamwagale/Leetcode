@@ -8,7 +8,7 @@ const api = axios.create({
   },
 })
 
-api.interceptors.request.use((config) =>{
+api.interceptors.request.use((config) =>{ //Everytime an api is called, the interceptors automatically add the token as header
   const token = getToken();
 
   if(token){

@@ -10,8 +10,10 @@ import Input from "../../../shared/components/Input";
 import { useRegister } from "../hooks/useRegister";
 
 import {toast} from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function Register(){
+  const navigate = useNavigate();
 
   const {//TBD
     register,
@@ -28,6 +30,7 @@ export default function Register(){
     registerMutation.mutate(data,{
       onSuccess:()=>{
         toast.success("Registration succesfull");
+        navigate("/login");
       },
       onError:(error:unknown)=>{
         if (axios.isAxiosError(error)) {

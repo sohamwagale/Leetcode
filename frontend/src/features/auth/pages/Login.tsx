@@ -34,13 +34,18 @@ export default function Login() {
       onSuccess: (response) => { //This callback runs if the API request succeeds.
         setToken(response.access_token);
         toast.success("Registration succesfull");
-        navigate("/")
+        navigate("/dashboard")
       },
       onError: (error: unknown) => {
         if (axios.isAxiosError(error)) {
-          toast.error(
-            error.response?.data?.detail ?? "Something went wrong"
-          );
+          const detail = error.response?.data?.detail;
+          const message =
+            Array.isArray(detail)
+              ? detail[0]?.msg ?? "Something went wrong"
+              : typeof detail === "string"
+              ? detail
+              : "Something went wrong";
+          toast.error(message);
         } else {
           toast.error("Something went wrong");
         }
