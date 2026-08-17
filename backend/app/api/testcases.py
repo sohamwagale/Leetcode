@@ -61,3 +61,20 @@ def get_problem_test_cases(
     .all()
   )
 
+@router.delete("/problem/{problem_id}")
+def delete_problem_test_cases(
+    problem_id: int,
+    db: Session = Depends(get_db)
+):
+  test_cases = (
+    db.query(TestCase)
+    .filter(TestCase.problem_id == problem_id)
+    .all()
+  )
+
+  for test_case in test_cases:
+    db.delete(test_case)
+
+  db.commit()
+
+  return {"message": "Test cases deleted successfully"}

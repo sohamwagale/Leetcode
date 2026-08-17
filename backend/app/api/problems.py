@@ -35,6 +35,8 @@ def create_problem(
     slug=request.slug,
     description=request.description,
     difficulty=request.difficulty,
+    function_name=request.function_name,
+    starter_code=request.starter_code,
     constraints=request.constraints,
     input_format=request.input_format,
     output_format=request.output_format,

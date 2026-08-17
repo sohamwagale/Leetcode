@@ -6,6 +6,8 @@ class ProblemCreate(BaseModel):
   slug:str=Field(min_length=1,max_length=200)
   description:str=Field(min_length=1)
   difficulty:str
+  function_name:str=Field(min_length=1,max_length=100)
+  starter_code:str | None = None
   constraints:str | None = None
   input_format:str | None = None
   output_format:str | None = None
@@ -16,6 +18,8 @@ class ProblemResponse(BaseModel):
   slug: str
   description: str
   difficulty: str
+  function_name: str
+  starter_code: str | None
   constraints: str | None
   input_format: str | None
   output_format: str | None

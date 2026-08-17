@@ -12,6 +12,7 @@ class SubmissionResponse(BaseModel):
   language:str
   code:str
   status:str
+  # statuses:dict[int, str] | None  HERE
   runtime:float | None
   memory:float | None
   created_at: datetime

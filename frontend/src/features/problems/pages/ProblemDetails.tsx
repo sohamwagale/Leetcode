@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useProblem } from "../hooks/useProblem";
 import { useSubmit } from "../hooks/useSubmit";
@@ -13,21 +13,28 @@ export default function ProblemDetails() {
   const { slug } = useParams();
   const submitMutation = useSubmit();
 
-  const [code, setCode] = useState(
-    `def twoSum(nums, target):
-  # Write your solution here
-  pass`
-  );
+  const [code, setCode] = useState("");
+
 
   type Language = "python" | "javascript" | "cpp" | "java";
 
   const [language, setLanguage] = useState<Language>("python");
+  const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
 
   const {
     data: problem,
     isLoading,
     isError,
   } = useProblem(slug!);
+
+  useEffect(() => {
+    if (problem?.starter_code) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCode(problem.starter_code);
+    }
+  }, [problem, language]);
+
+
 
   if (isLoading) {
     return (
@@ -53,26 +60,34 @@ export default function ProblemDetails() {
     })
   }
 
+
   const handleSubmit = () => {
+    setSubmissionStatus(null);
+
     submitMutation.mutate({
-      problemId:problem.id,
+      problemId: problem.id,
       language,
       code,
     },
-    {
-      onSuccess:()=>{
-        toast.success("Code submitted successfully");
-      },
-      onError:(error:unknown)=>{
-        if (axios.isAxiosError(error)) {
-          toast.error(
-            error.response?.data?.detail ?? "Something went wrong"
-          );
-        } else {
-          toast.error("Something went wrong");
+      {
+        onSuccess: (submission) => {
+          setSubmissionStatus(submission.status);
+          if (submission.status === "Accepted") {
+            toast.success("Accepted!");
+          } else {
+            toast.error(submission.status);
+          }
+        },
+        onError: (error: unknown) => {
+          if (axios.isAxiosError(error)) {
+            toast.error(
+              error.response?.data?.detail ?? "Something went wrong"
+            );
+          } else {
+            toast.error("Something went wrong");
+          }
         }
-      }
-    })
+      })
   }
 
   return (
@@ -130,7 +145,7 @@ export default function ProblemDetails() {
           <span className="inline-block mt-3 text-green-400 text-sm">{problem.difficulty}</span>
 
           <div className="mt-6 space-y-6">
-            
+
             <section>
               <h2 className="font-semibold text-lg mb-2">Description</h2>
               <p className="text-slate-300 leading-7">{problem.description}</p>
@@ -175,14 +190,31 @@ export default function ProblemDetails() {
           {/* Bottom Panel */}
           <div className="h-40 border-t border-slate-800 p-4">
 
-            <h2 className="font-semibold mb-3">
-              Testcase
-            </h2>
+            <div className="flex items-center gap-4 mb-3">
 
-            <textarea
-              className="w-full h-20 bg-slate-900 border border-slate-700 rounded p-3 text-sm resize-none outline-none focus:border-slate-500"
-              placeholder="Enter your testcase..."
-            />
+              <h2 className="font-semibold mb-3">
+                Testcase
+              </h2>
+
+              <h2 className="font-semibold mb-3">
+                Test Result
+              </h2>
+            </div>
+
+            {submissionStatus && (
+              <div className="text-lg font-semibold">
+                {submissionStatus}
+              </div>
+            )}
+
+            {!submissionStatus && (
+
+              <textarea
+                className="w-full h-20 bg-slate-900 border border-slate-700 rounded p-3 text-sm resize-none outline-none focus:border-slate-500"
+                placeholder="Enter your testcase..."
+              />
+            )}
+
 
           </div>
 

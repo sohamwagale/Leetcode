@@ -6,6 +6,8 @@ export type Problem = {
   slug: string,
   description: string,
   difficulty: string,
+  function_name:string,
+  starter_code:string|null,
   constraints: string | null,
   input_format: string | null,
   output_format: string | null,

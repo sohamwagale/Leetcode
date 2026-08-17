@@ -1,19 +1,50 @@
+import json
 import subprocess
 import tempfile
 from pathlib import Path
 import uuid
 
+from app.models.problem import Problem
+from app.models.testcase import TestCase
+
 def run_python_code(
-  code:str,
+  code:str, #initally starter code
+  funciton_name:str,
   input_data:str,
+  expected_output:str,
   timeout:float=2.0,
 ):
+
+  try:
+    arguments = json.loads(input_data)
+    expected = json.loads(expected_output)
+
+  except json.JSONDecodeError:
+    return {
+      "status":"Judge Error",
+      "message":"invalid testcase format"
+    }
+
+  code_with_driver = f"""
+
+import json
+
+{code}
+
+arguments = {json.dumps(arguments)}
+
+result = {funciton_name}(*arguments)
+
+print(json.dumps(result))
+"""
+  
+  
   with tempfile.TemporaryDirectory() as temp_dir:
     temp_path = Path(temp_dir)
     source_file = temp_path / "solution.py" #join file path and name
 
     source_file.write_text(
-      code,
+      code_with_driver,
       encoding="utf-8",
     )
 
@@ -24,7 +55,6 @@ def run_python_code(
     # python process inside the container even if our subprocess.run kill
     # doesn't reach the container itself.
     inner_timeout = f"{timeout}s"
-
 
 
     command = [
@@ -116,7 +146,57 @@ def run_python_code(
         "output":result.stderr
       }
 
+    actual_output = result.stdout.strip()
+
+    try:
+      actual = json.loads(actual_output)
+    except json.JSONDecodeError:
+      return {
+        "status": "Wrong Answer",
+        "output": actual_output,
+      }
+
+    if actual != expected:
+      return {
+        "status": "Wrong Answer",
+        "output": actual_output,
+      }
+
     return {
-      "status":"Finished",
-      "output":result.stdout
+      "status":"Accepted",
+      "output":actual_output
     }
+
+def judge_submission(
+  problem:Problem,
+  test_cases:list[TestCase],
+  code:str
+):
+  # test_case_statuses = dict() HERE
+  
+  for test_case in test_cases:
+    result = run_python_code(
+      code=code,
+      funciton_name=problem.function_name,
+      input_data=test_case.input,
+      expected_output=test_case.expected_output
+    )
+
+    # HERE
+    # test_case_statuses[test_case.id] = result["status"] 
+
+    if result["status"] != "Accepted":
+      return result
+      # return { HERE
+      #   **result,
+      #   "test_case_statuses": test_case_statuses
+      # }
+
+  return {
+    "status":"Accepted",
+    "output":"",
+    # HERE
+    # "test_case_statuses":test_case_statuses
+  }
+
+
