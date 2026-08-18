@@ -77,3 +77,17 @@ export const runCode = async (
   return response.data
 }
 
+export const getMySubmission = async():Promise<Submission[]>=>{
+  const response = await api.get("/submissions/mine");
+  return response.data;
+}
+
+export const getMySubmissionByProblem = async(
+  problemId:number
+):Promise<Submission[]>=>{
+  const response = await api.get(
+    `/submissions/mine?problem_id=${problemId}`
+  );
+
+  return response.data;
+}

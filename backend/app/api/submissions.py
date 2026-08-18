@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -95,12 +95,24 @@ def submit(
 
 @router.get("/mine",response_model=list[SubmissionResponse])
 def get_my_submissions(
+  problem_id:int|None = Query(default=None),
   db:Session=Depends(get_db),
   current_user:User=Depends(get_current_user)
 ):
-  return (
+
+  query = (
     db.query(Submission)
     .filter(Submission.user_id == current_user.id)
-    .order_by(Submission.created_at.desc())
+  )
+
+  if problem_id is not None:
+    query = query.filter(
+      Submission.problem_id == problem_id
+    )
+  
+  return (
+    query
+    .order_by(Submission.id.desc())
     .all()
   )
+

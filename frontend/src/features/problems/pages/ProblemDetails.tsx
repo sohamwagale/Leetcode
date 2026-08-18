@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useProblem } from "../hooks/useProblem";
 import { useSubmit } from "../hooks/useSubmit";
 import { useRun } from "../hooks/useRun"
+import { useProblemSubmissions } from "../hooks/useProblemSubmissions";
 
 import { toast } from "sonner";
 
@@ -26,6 +27,20 @@ export default function ProblemDetails() {
     isLoading,
     isError,
   } = useProblem(slug!);
+
+  const {
+    data: submissions,
+    isLoading: submissionsLoading,
+    refetch: refetchSubmissions
+  } = useProblemSubmissions(problem?.id, {
+    enabled: !!problem
+  });
+
+  useEffect(() => {
+    if (submitMutation.data) {
+      refetchSubmissions();
+    }
+  }, [submitMutation.data, refetchSubmissions]);
 
   useEffect(() => {
     if (problem?.starter_code) {
@@ -196,7 +211,70 @@ export default function ProblemDetails() {
 
           </div>
 
+          {/* Submissions */}
+
+          <div className="mt-8">
+
+            <h2 className="text-xl font-semibold mb-4">
+              Your Submissions
+            </h2>
+
+            {submissionsLoading ? (
+              <p className="text-slate-500">
+                Loading submissions...
+              </p>
+            ) : submissions?.length === 0 ? (
+              <p className="text-slate-500">
+                No submissions yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+
+                {submissions?.map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="
+                        flex
+                        items-center
+                        justify-between
+                        bg-slate-800
+                        rounded
+                        px-4
+                        py-3
+                    "
+                  >
+
+                    <div>
+                      <span
+                        className={
+                          submission.status === "Accepted"
+                            ? "text-green-400"
+                            : "text-red-400"
+                        }
+                      >
+                        {submission.status}
+                      </span>
+
+                      <span className="text-slate-500 ml-4">
+                        {submission.language}
+                      </span>
+                    </div>
+
+                    <span className="text-sm text-slate-500">
+                      {new Date(
+                        submission.created_at
+                      ).toLocaleString()}
+                    </span>
+
+                  </div>
+                ))}
+
+              </div>
+            )}
+
+          </div>
         </section>
+
 
         {/* Editor Panel */}
         <section className="w-1/2 flex flex-col">
@@ -216,22 +294,20 @@ export default function ProblemDetails() {
             <div className="flex items-center gap-6 border-b border-slate-800 px-4 pt-2">
               <button
                 onClick={() => setActiveTab("testcase")}
-                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
-                  activeTab === "testcase"
-                    ? "border-green-500 text-white"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
+                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "testcase"
+                  ? "border-green-500 text-white"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 Testcase
               </button>
 
               <button
                 onClick={() => setActiveTab("result")}
-                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
-                  activeTab === "result"
-                    ? "border-green-500 text-white"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
+                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "result"
+                  ? "border-green-500 text-white"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 Test Result
               </button>
