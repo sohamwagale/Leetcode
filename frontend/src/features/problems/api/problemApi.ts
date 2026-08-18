@@ -1,4 +1,5 @@
 import api from "../../../shared/lib/api";
+import type { Language } from "../pages/ProblemDetails";
 
 export type Problem = {
   id: number,
@@ -51,3 +52,28 @@ export const createSubmission = async (
 
   return response.data;
 };
+
+export type RunResult = {
+  status:string,
+  output:string,
+}
+
+export const runCode = async (
+  problemId: number,
+  language:Language,
+  code:string,
+  input:string
+): Promise<RunResult> => {
+  const response = await api.post(
+    "/run",
+    {
+      problem_id:problemId,
+      language,
+      code,
+      input,
+    }
+  );
+
+  return response.data
+}
+

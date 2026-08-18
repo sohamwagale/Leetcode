@@ -43,7 +43,7 @@ def twoSum(nums, target):
 
 res = run_python_code(
   code,
-  funciton_name="twoSum",
+  function_name="twoSum",
   input_data="[[2,7,11,15],9]",
   expected_output="[0,1]",
 )

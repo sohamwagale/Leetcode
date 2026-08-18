@@ -3,23 +3,23 @@ import { useEffect, useState } from "react";
 
 import { useProblem } from "../hooks/useProblem";
 import { useSubmit } from "../hooks/useSubmit";
+import { useRun } from "../hooks/useRun"
 
 import { toast } from "sonner";
 
 import CodeEditor from "../components/CodeEditor";
 import axios from "axios";
 
+export type Language = "python" | "javascript" | "cpp" | "java";
 export default function ProblemDetails() {
   const { slug } = useParams();
   const submitMutation = useSubmit();
+  const runMutation = useRun();
 
   const [code, setCode] = useState("");
-
-
-  type Language = "python" | "javascript" | "cpp" | "java";
-
   const [language, setLanguage] = useState<Language>("python");
   const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
 
   const {
     data: problem,
@@ -35,6 +35,9 @@ export default function ProblemDetails() {
   }, [problem, language]);
 
 
+  const [testInput, setTestInput] = useState(
+    "[[2,7,11,15],9]"
+  );
 
   if (isLoading) {
     return (
@@ -52,16 +55,33 @@ export default function ProblemDetails() {
     );
   }
 
+
   const handleRun = () => {
-    console.log({
-      code,
+    setActiveTab("result");
+    runMutation.mutate({
+      problemId: problem.id,
       language,
-      action: "run"
-    })
+      code,
+      input: testInput
+    },
+      {
+        onSuccess: (result) => {
+          setSubmissionStatus(`${result.status}\n\n${result.output}`);
+        },
+        onError: (error: unknown) => {
+          if (axios.isAxiosError(error)) {
+            toast.error(
+              error.response?.data?.detail ?? "Code Execution Failed"
+            );
+          } else {
+            toast.error("Code Execution Failed");
+          }
+        }
+      })
   }
 
-
   const handleSubmit = () => {
+    setActiveTab("result");
     setSubmissionStatus(null);
 
     submitMutation.mutate({
@@ -71,7 +91,7 @@ export default function ProblemDetails() {
     },
       {
         onSuccess: (submission) => {
-          setSubmissionStatus(submission.status);
+          setSubmissionStatus(`${submission.status}\n\nPassed all Testcases`);
           if (submission.status === "Accepted") {
             toast.success("Accepted!");
           } else {
@@ -87,7 +107,8 @@ export default function ProblemDetails() {
             toast.error("Something went wrong");
           }
         }
-      })
+      }
+    )
   }
 
   return (
@@ -115,9 +136,10 @@ export default function ProblemDetails() {
 
           <button
             onClick={handleRun}
-            className="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600"
+            disabled={runMutation.isPending}
+            className="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
           >
-            Run
+            {runMutation.isPending ? "Running" : "Run"}
           </button>
 
           <button
@@ -188,40 +210,63 @@ export default function ProblemDetails() {
           </div>
 
           {/* Bottom Panel */}
-          <div className="h-40 border-t border-slate-800 p-4">
+          <div className="h-48 border-t border-slate-800 flex flex-col bg-slate-950">
 
-            <div className="flex items-center gap-4 mb-3">
-
-              <h2 className="font-semibold mb-3">
+            {/* Tabs Header */}
+            <div className="flex items-center gap-6 border-b border-slate-800 px-4 pt-2">
+              <button
+                onClick={() => setActiveTab("testcase")}
+                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === "testcase"
+                    ? "border-green-500 text-white"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
                 Testcase
-              </h2>
+              </button>
 
-              <h2 className="font-semibold mb-3">
+              <button
+                onClick={() => setActiveTab("result")}
+                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === "result"
+                    ? "border-green-500 text-white"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
                 Test Result
-              </h2>
+              </button>
             </div>
 
-            {submissionStatus && (
-              <div className="text-lg font-semibold">
-                {submissionStatus}
-              </div>
-            )}
-
-            {!submissionStatus && (
-
-              <textarea
-                className="w-full h-20 bg-slate-900 border border-slate-700 rounded p-3 text-sm resize-none outline-none focus:border-slate-500"
-                placeholder="Enter your testcase..."
-              />
-            )}
-
-
+            {/* Tab Content */}
+            <div className="p-4 flex-1 overflow-y-auto">
+              {activeTab === "testcase" ? (
+                <textarea
+                  value={testInput}
+                  onChange={(event) => setTestInput(event.target.value)}
+                  className="w-full h-28 bg-slate-900 border border-slate-700 rounded-md p-3 text-sm font-mono text-slate-200 resize-none outline-none focus:border-slate-500"
+                  placeholder="Enter your testcase..."
+                />
+              ) : (
+                <div>
+                  {runMutation.isPending || submitMutation.isPending ? (
+                    <div className="text-slate-400 text-sm flex items-center gap-2">
+                      <span className="animate-spin inline-block">⏳</span> Executing code...
+                    </div>
+                  ) : submissionStatus ? (
+                    <pre className="text-sm font-mono text-slate-200 bg-slate-900 p-3 rounded-md border border-slate-800 whitespace-pre-wrap">
+                      {submissionStatus}
+                    </pre>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      Run your code to see the result.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-
         </section>
-
       </main>
-
     </div>
   );
 }

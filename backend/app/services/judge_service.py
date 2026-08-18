@@ -7,17 +7,16 @@ import uuid
 from app.models.problem import Problem
 from app.models.testcase import TestCase
 
-def run_python_code(
-  code:str, #initally starter code
-  funciton_name:str,
+
+# only execution of one test case
+def execute_python_code(
+  code:str,
+  function_name:str,
   input_data:str,
-  expected_output:str,
   timeout:float=2.0,
 ):
-
   try:
     arguments = json.loads(input_data)
-    expected = json.loads(expected_output)
 
   except json.JSONDecodeError:
     return {
@@ -33,7 +32,7 @@ import json
 
 arguments = {json.dumps(arguments)}
 
-result = {funciton_name}(*arguments)
+result = {function_name}(*arguments)
 
 print(json.dumps(result))
 """
@@ -119,16 +118,8 @@ print(json.dumps(result))
       )
 
     except subprocess.TimeoutExpired:
-      subprocess.run(
-        ["docker","kill",container_name],
-        capture_output=True
-      )
-
-      subprocess.run(
-        ["docker","rm","-f",container_name],
-        capture_output=True
-      )
-
+      subprocess.run(["docker","kill",container_name],capture_output=True)
+      subprocess.run(["docker","rm","-f",container_name],capture_output=True)
       return {
         "status":"time limit exceeed",
         "output":""
@@ -145,28 +136,57 @@ print(json.dumps(result))
         "status":"Runtime error",
         "output":result.stderr
       }
-
-    actual_output = result.stdout.strip()
-
-    try:
-      actual = json.loads(actual_output)
-    except json.JSONDecodeError:
-      return {
-        "status": "Wrong Answer",
-        "output": actual_output,
-      }
-
-    if actual != expected:
-      return {
-        "status": "Wrong Answer",
-        "output": actual_output,
-      }
-
     return {
-      "status":"Accepted",
-      "output":actual_output
+      "status": "Finished",
+      "output": result.stdout.strip(),
+    }
+  
+# Checking of one test case
+def run_python_code(
+  code:str, #initally starter code
+  function_name:str,
+  input_data:str, # test case input
+  expected_output:str, # test case output
+  timeout:float=2.0,
+):
+  expected = json.loads(expected_output)
+
+  result = execute_python_code(
+    code=code,
+    function_name=function_name,
+    input_data=input_data,
+    timeout=timeout,
+  )
+
+  if result["status"] != "Finished":
+    return result
+
+  actual_output = result["output"]
+
+  try:
+    actual = json.loads(actual_output)
+    expected = json.loads(expected_output)
+
+  except json.JSONDecodeError:
+    return {
+      "status": "Wrong Answer",
+      "output": actual_output,
     }
 
+  if actual != expected:
+    return {
+      "status": "Wrong Answer",
+      "output": actual_output,
+    }
+
+  return {
+    "status":"Accepted",
+    "output":actual_output
+  }
+
+
+
+# Checking of all test cases
 def judge_submission(
   problem:Problem,
   test_cases:list[TestCase],
@@ -177,7 +197,7 @@ def judge_submission(
   for test_case in test_cases:
     result = run_python_code(
       code=code,
-      funciton_name=problem.function_name,
+      function_name=problem.function_name,
       input_data=test_case.input,
       expected_output=test_case.expected_output
     )

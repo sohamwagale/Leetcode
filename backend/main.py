@@ -10,6 +10,7 @@ from app.models.testcase import TestCase
 from app.models.submission import Submission
 
 # ROuters
+from app.api.run import router as run_router
 from app.api.auth import router as auth_router
 from app.api.problems import router as problems_router
 from app.api.testcases import router as testcases_router
@@ -35,10 +36,12 @@ app.add_middleware(
   allow_methods=["*"],
 )
 
+app.include_router(run_router)
 app.include_router(auth_router)
 app.include_router(problems_router)
-app.include_router(submissions_router)
 app.include_router(testcases_router)
+app.include_router(submissions_router)
+
 
 @app.get("/")
 def root():
